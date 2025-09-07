@@ -11,8 +11,8 @@ import { SimpleRecipeImporter } from '@/components/scraping/SimpleRecipeImporter
 import { RecipePreview } from '@/components/recipe/RecipePreview';
 
 export const HomePage: React.FC = () => {
-  const { state, searchRecipes, loadMoreRecipes, loadFeaturedRecipes, loadRandomRecipes, getRecipeDetails } = useRecipes();
-  const { state: localState, saveSpoonacularRecipe, importRecipeFromUrl, loadLocalRecipes } = useLocalRecipes();
+  const { state, searchRecipes, loadMoreRecipes, loadFeaturedRecipes, loadRandomRecipes } = useRecipes();
+  const { state: localState, loadLocalRecipes } = useLocalRecipes();
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
   const [view, setView] = useState<'search' | 'detail' | 'preview'>('search');
   const [detailLoading, setDetailLoading] = useState(false);

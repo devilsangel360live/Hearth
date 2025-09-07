@@ -18,13 +18,13 @@ interface ScrapingJob {
 
 // Detect if running in Electron
 const isElectron = () => {
-  return typeof window !== 'undefined' && window.process && window.process.type === 'renderer';
+  const w = (typeof window !== 'undefined' ? (window as any) : undefined);
+  return !!(w && w.process && (w.process.type === 'renderer' || (w.process.versions && w.process.versions.electron)));
 };
 
 export const ElectronBrowser: React.FC<ElectronBrowserProps> = ({
   onRecipeScraped,
   onClose,
-  onShowImporter,
   initialUrl = 'https://www.allrecipes.com'
 }) => {
   const [currentUrl, setCurrentUrl] = useState(initialUrl);

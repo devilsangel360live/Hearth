@@ -11,10 +11,6 @@ import { RecipeImporter } from '@/components/scraping/RecipeImporter';
 import { SimpleRecipeImporter } from '@/components/scraping/SimpleRecipeImporter';
 import { RecipePreview } from '@/components/recipe/RecipePreview';
 
-// Detect if running in Electron
-const isElectron = () => {
-  return typeof window !== 'undefined' && window.process && window.process.type === 'renderer';
-};
 
 export const SimpleHomePage: React.FC = () => {
   const { checkServerHealth, deleteLocalRecipe, loadLocalRecipes, updateLocalRecipe } = useLocalRecipes();

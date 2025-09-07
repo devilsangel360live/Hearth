@@ -1,6 +1,9 @@
 # Frontend Web App Dockerfile
 FROM node:18-alpine AS builder
 
+# Avoid unnecessary Chromium download (puppeteer is a dependency in root)
+ENV PUPPETEER_SKIP_DOWNLOAD=true
+
 # Set working directory
 WORKDIR /app
 

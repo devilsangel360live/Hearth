@@ -1,4 +1,4 @@
-import { Recipe, RecipeSearchFilters } from '@/types';
+import { Recipe } from '@/types';
 
 const API_BASE_URL = '/api';
 
