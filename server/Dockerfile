@@ -1,7 +1,7 @@
-# Backend Server Dockerfile
-FROM node:18-alpine AS base
+## Backend Server Dockerfile (build TS -> run JS)
 
-# Install dependencies for Puppeteer
+# Base image with system deps for Chromium
+FROM node:18-alpine AS base
 RUN apk add --no-cache \
     chromium \
     nss \
@@ -11,38 +11,35 @@ RUN apk add --no-cache \
     ca-certificates \
     ttf-freefont
 
-# Tell Puppeteer to skip installing Chromium and use the installed package
 ENV PUPPETEER_SKIP_DOWNLOAD=true \
     PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
 
-# Set working directory
 WORKDIR /app
 
-# Copy package files
+# Builder stage: install all deps, generate Prisma, compile TS
+FROM base AS builder
 COPY package*.json ./
-
-# Install dependencies
-RUN npm ci --only=production && \
-    npm cache clean --force
-
-# Copy server source code
+RUN npm ci
 COPY server/ ./server/
 COPY prisma/ ./prisma/
-
-# Generate Prisma client
 RUN npx prisma generate
+RUN npm run build:server
+# Prune devDependencies for runtime
+RUN npm prune --omit=dev && npm cache clean --force
 
-# Expose port
+# Runtime stage: copy only what we need
+FROM base AS runner
+WORKDIR /app
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/server/dist ./server/dist
+COPY --from=builder /app/generated ./generated
+COPY --from=builder /app/prisma ./prisma
+
 EXPOSE 3002
-
-# Create non-root user for security
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S server -u 1001
+RUN addgroup -g 1001 -S nodejs && adduser -S server -u 1001
 USER server
 
-# Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD node -e "require('http').get('http://localhost:3002/api/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })" || exit 1
 
-# Start the server
-CMD ["npm", "run", "server"]
+CMD ["node", "server/dist/index.js"]
