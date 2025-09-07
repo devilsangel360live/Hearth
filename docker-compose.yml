@@ -1,0 +1,81 @@
+version: '3.8'
+
+services:
+  # Database
+  hearth-db:
+    image: postgres:15-alpine
+    container_name: hearth-database
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-hearth}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    volumes:
+      - hearth_postgres_data:/var/lib/postgresql/data
+    networks:
+      - hearth-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-hearth}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # Backend Server
+  hearth-backend:
+    build: 
+      context: .
+      dockerfile: server/Dockerfile
+    container_name: hearth-backend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3002
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@hearth-db:5432/${POSTGRES_DB:-hearth}
+    ports:
+      - "${BACKEND_PORT:-7857}:3002"
+    depends_on:
+      hearth-db:
+        condition: service_healthy
+    networks:
+      - hearth-network
+    volumes:
+      # Mount uploads directory for persistent file storage
+      - hearth_uploads:/app/uploads
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3002/api/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Frontend Web App
+  hearth-frontend:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: hearth-frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-7850}:80"
+    depends_on:
+      hearth-backend:
+        condition: service_healthy
+    networks:
+      - hearth-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+networks:
+  hearth-network:
+    driver: bridge
+
+volumes:
+  hearth_postgres_data:
+    driver: local
+  hearth_uploads:
+    driver: local

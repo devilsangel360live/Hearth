@@ -1,0 +1,269 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Recipe {
+  id          String   @id @default(cuid())
+  
+  // Basic Info
+  title       String
+  image       String?
+  summary     String?
+  sourceUrl   String?
+  sourceName  String?
+  
+  // Time & Servings
+  readyInMinutes Int?
+  servings       Int?
+  
+  // Health & Dietary
+  healthScore    Float?
+  vegetarian     Boolean @default(false)
+  vegan          Boolean @default(false)
+  glutenFree     Boolean @default(false)
+  dairyFree      Boolean @default(false)
+  sustainable    Boolean @default(false)
+  
+  // External IDs
+  spoonacularId  Int?     @unique
+  externalId     String?
+  
+  // Metadata
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  scrapedAt   DateTime?
+  isBookmarked Boolean @default(false)
+  isFavorite   Boolean @default(false)
+  personalRating Float?
+  
+  // Relations
+  ingredients   RecipeIngredient[]
+  instructions  Instruction[]
+  cuisines      RecipeCuisine[]
+  diets         RecipeDiet[]
+  nutrition     Nutrition?
+  tags          RecipeTag[]
+  collections   RecipeCollection[]
+  
+  @@map("recipes")
+}
+
+model Ingredient {
+  id       String @id @default(cuid())
+  name     String @unique
+  image    String?
+  category String?
+  
+  // Relations
+  recipes  RecipeIngredient[]
+  
+  @@map("ingredients")
+}
+
+model RecipeIngredient {
+  id         String @id @default(cuid())
+  
+  // Foreign Keys
+  recipeId     String
+  ingredientId String
+  
+  // Quantity
+  amount       Float
+  unit         String?
+  original     String? // Original text from recipe
+  
+  // Additional info
+  consistency  String?
+  aisle        String?
+  
+  // Relations
+  recipe     Recipe     @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  ingredient Ingredient @relation(fields: [ingredientId], references: [id])
+  
+  @@unique([recipeId, ingredientId])
+  @@map("recipe_ingredients")
+}
+
+model Instruction {
+  id       String @id @default(cuid())
+  
+  // Foreign Key
+  recipeId String
+  
+  // Content
+  number   Int
+  step     String
+  
+  // Timing
+  length   Int? // in minutes
+  
+  // Relations
+  recipe   Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  
+  @@unique([recipeId, number])
+  @@map("instructions")
+}
+
+model Cuisine {
+  id      String @id @default(cuid())
+  name    String @unique
+  
+  // Relations
+  recipes RecipeCuisine[]
+  
+  @@map("cuisines")
+}
+
+model RecipeCuisine {
+  id        String @id @default(cuid())
+  
+  recipeId  String
+  cuisineId String
+  
+  recipe    Recipe  @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  cuisine   Cuisine @relation(fields: [cuisineId], references: [id])
+  
+  @@unique([recipeId, cuisineId])
+  @@map("recipe_cuisines")
+}
+
+model Diet {
+  id      String @id @default(cuid())
+  name    String @unique
+  
+  // Relations
+  recipes RecipeDiet[]
+  
+  @@map("diets")
+}
+
+model RecipeDiet {
+  id       String @id @default(cuid())
+  
+  recipeId String
+  dietId   String
+  
+  recipe   Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  diet     Diet   @relation(fields: [dietId], references: [id])
+  
+  @@unique([recipeId, dietId])
+  @@map("recipe_diets")
+}
+
+model Nutrition {
+  id        String @id @default(cuid())
+  
+  // Foreign Key
+  recipeId  String @unique
+  
+  // Macros
+  calories  Float?
+  protein   Float?
+  fat       Float?
+  carbs     Float?
+  fiber     Float?
+  sugar     Float?
+  sodium    Float?
+  
+  // Additional nutrients stored as JSON
+  nutrients String? // JSON array of {name, amount, unit, percentOfDailyNeeds}
+  
+  // Relations
+  recipe    Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  
+  @@map("nutrition")
+}
+
+model Tag {
+  id      String @id @default(cuid())
+  name    String @unique
+  color   String? // Hex color for UI
+  
+  // Relations
+  recipes RecipeTag[]
+  
+  @@map("tags")
+}
+
+model RecipeTag {
+  id       String @id @default(cuid())
+  
+  recipeId String
+  tagId    String
+  
+  recipe   Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  tag      Tag    @relation(fields: [tagId], references: [id])
+  
+  @@unique([recipeId, tagId])
+  @@map("recipe_tags")
+}
+
+model Collection {
+  id          String @id @default(cuid())
+  name        String
+  description String?
+  color       String?
+  isDefault   Boolean @default(false)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  recipes     RecipeCollection[]
+  
+  @@map("collections")
+}
+
+model RecipeCollection {
+  id           String @id @default(cuid())
+  
+  recipeId     String
+  collectionId String
+  
+  addedAt      DateTime @default(now())
+  
+  recipe       Recipe     @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  
+  @@unique([recipeId, collectionId])
+  @@map("recipe_collections")
+}
+
+// For tracking scraped URLs to avoid duplicates
+model ScrapedUrl {
+  id        String   @id @default(cuid())
+  url       String   @unique
+  
+  status    String   // 'success', 'failed', 'processing'
+  recipeId  String?  // If successfully scraped
+  
+  scrapedAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Error info
+  errorMessage String?
+  retryCount   Int @default(0)
+  
+  @@map("scraped_urls")
+}
+
+// For storing user preferences and settings
+model UserPreference {
+  id    String @id @default(cuid())
+  key   String @unique
+  value String // JSON string
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("user_preferences")
+}
