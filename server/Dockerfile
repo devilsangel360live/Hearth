@@ -1,7 +1,7 @@
 ## Backend Server Dockerfile (build TS -> run JS)
 
 # Base image with system deps for Chromium
-FROM node:18-alpine AS base
+FROM node:20-alpine AS base
 RUN apk add --no-cache \
     chromium \
     nss \
