@@ -26,7 +26,7 @@ services:
 
   # Backend Server - using pre-built image
   hearth-backend:
-    image: ghcr.io/arindam.pal/hearth-backend:latest
+    image: ghcr.io/devilsangel360live/hearth-backend:latest
     container_name: hearth-backend
     restart: unless-stopped
     environment:
@@ -52,7 +52,7 @@ services:
 
   # Frontend Web App - using pre-built image
   hearth-frontend:
-    image: ghcr.io/arindam.pal/hearth-frontend:latest
+    image: ghcr.io/devilsangel360live/hearth-frontend:latest
     container_name: hearth-frontend
     restart: unless-stopped
     ports:
