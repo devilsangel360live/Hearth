@@ -6,7 +6,6 @@ WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
-COPY generated/ ./generated/
 
 # Install all dependencies (including dev dependencies for building)
 RUN npm ci && npm cache clean --force
