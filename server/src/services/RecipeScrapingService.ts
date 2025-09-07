@@ -1,5 +1,6 @@
 import * as cheerio from 'cheerio';
 import puppeteer from 'puppeteer';
+import type { Browser } from 'puppeteer';
 import { JSDOM } from 'jsdom';
 import { CreateRecipeData } from './RecipeService';
 import { SimpleScrapingService } from './SimpleScrapingService';
@@ -37,7 +38,7 @@ interface ScrapingResult {
 }
 
 export class RecipeScrapingService {
-  private browser: puppeteer.Browser | null = null;
+  private browser: Browser | null = null;
   private simpleScrapingService = new SimpleScrapingService();
 
   async initBrowser() {

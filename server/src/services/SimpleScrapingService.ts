@@ -39,7 +39,6 @@ export class SimpleScrapingService {
           'Connection': 'keep-alive',
           'Upgrade-Insecure-Requests': '1',
         },
-        timeout: 15000,
       });
 
       if (!response.ok) {
